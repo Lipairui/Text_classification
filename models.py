@@ -69,7 +69,7 @@ def get_tfidf_feature(documents):
     tfidf_features = pd.DataFrame(res,columns = colName)
     return tfidf_features
     
-  def getLsiFeature(documents, topicNum):
+def getLsiFeature(documents, topicNum):
     '''
      Funciton:
          generate lsi features by training lsi model
@@ -103,7 +103,7 @@ def get_tfidf_feature(documents):
     lsiFeature = pd.DataFrame(lsiFeature, columns = colName)
     return lsiFeature
   
- def getLdaFeature(documents, topicNum):
+def getLdaFeature(documents, topicNum):
     '''
      Funciton:
          generate lda features by training lda model
