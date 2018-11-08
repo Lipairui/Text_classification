@@ -171,7 +171,7 @@ def getLstmFeature(X_train,y_train,X_test):
     Output:
         lstm_train: LSTM 2-classification probability features of training data (DataFrame format)
         lstm_test:  LSTM 2-classification probability features of testing data (DataFrame format)
-     ...
+     '''
     # parameters
     max_length = 40
     dim = 300
@@ -195,7 +195,7 @@ def getLstmFeature(X_train,y_train,X_test):
                 vocab.append(word)
         docs.append(s)   
     vocab = set(vocab)
-    
+
     # Encode documents
     wordindex = dict()
     embedding_matrix = np.zeros((len(vocab),dim))
@@ -208,12 +208,12 @@ def getLstmFeature(X_train,y_train,X_test):
         for word in doc:
             encoded_doc.append(wordindex[word])
         encoded_docs.append(encoded_doc)
-  
+
     # Pad sentences
     padded_docs = pad_sequences(encoded_docs, maxlen=max_length, padding='post')
     p_train = padded_docs[:len(y_train)]
     p_test = padded_docs[len(y_train):]
-   
+
     # lstm model structure
     model = Sequential()
     embedding = Embedding(
