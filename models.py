@@ -1,4 +1,29 @@
 # -*- coding: utf-8 -*-
+import pandas as pd
+import numpy as np
+import re
+import jieba
+import time
+import codecs
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn import cross_validation, metrics
+from sklearn.cross_validation import StratifiedKFold
+from sklearn.cross_validation import cross_val_score
+from gensim.models.lsimodel import LsiModel
+from gensim.models.ldamodel import LdaModel
+from gensim.models.tfidfmodel import TfidfModel
+from gensim.models import Word2Vec,KeyedVectors
+from gensim import corpora
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.layers.core import *
+from keras.layers.embeddings import Embedding
+from keras.layers.recurrent import LSTM
+from keras.layers.core import Dense, Dropout,Activation
+from keras.models import model_from_yaml
+from keras.models import Sequential
+from keras.optimizers import *
+from keras.preprocessing.sequence import pad_sequences
+
 def LogInfo(stri):
     '''
      Funciton: 
@@ -172,6 +197,7 @@ def getLstmFeature(X_train,y_train,X_test):
         lstm_train: LSTM 2-classification probability features of training data (DataFrame format)
         lstm_test:  LSTM 2-classification probability features of testing data (DataFrame format)
      '''
+    LogInfo('Generate LSTM featrues...')
     # parameters
     max_length = 40
     dim = 300
