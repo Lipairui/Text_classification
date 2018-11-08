@@ -160,7 +160,104 @@ def getKeyWordFeature(documents,corpus_path):
     feature = pd.DataFrame(feature,columns=['key_words_num'])
     return feature
     
-def getLstmFeature(X_train,X_test,y_train):
+def getLstmFeature(X_train,y_train,X_test):
+    '''
+    Function:
+        geneate LSTM 2-classification probability features by cross validation
+    Input:
+        X_train: list of preprocessed sentences of traning data
+        y_train: list of labels of training data
+        X_test:  list of preprocessed sentences of testing data
+    Output:
+        lstm_train: LSTM 2-classification probability features of training data (DataFrame format)
+        lstm_test:  LSTM 2-classification probability features of testing data (DataFrame format)
+     ...
+    # parameters
+    max_length = 40
+    dim = 300
+    batch_size = 32
+    n_epoch = 20
+    # load word2vec model  
+    LogInfo('Load word2vec model...')
+    model_path = '../model/cn.cbow.bin'   
+    model = KeyedVectors.load_word2vec_format(model_path,binary=True,unicode_errors='ignore')
+    # Get vocab
+    documents = X_train+X_test
+    documents = [doc.split(' ') for doc in documents]
+    # filter if not in word2vec
+    vocab = []
+    docs = []
+    for doc in documents:
+        s = []
+        for word in doc:     
+            if word in model.vocab:
+                s.append(word)
+                vocab.append(word)
+        docs.append(s)   
+    vocab = set(vocab)
+    
+    # Encode documents
+    wordindex = dict()
+    embedding_matrix = np.zeros((len(vocab),dim))
+    for i, word in enumerate(vocab):
+        wordindex[word] = i
+        embedding_matrix[i] = model[word]
+    encoded_docs = []
+    for doc in docs:
+        encoded_doc = []
+        for word in doc:
+            encoded_doc.append(wordindex[word])
+        encoded_docs.append(encoded_doc)
+  
+    # Pad sentences
+    padded_docs = pad_sequences(encoded_docs, maxlen=max_length, padding='post')
+    p_train = padded_docs[:len(y_train)]
+    p_test = padded_docs[len(y_train):]
+   
+    # lstm model structure
+    model = Sequential()
+    embedding = Embedding(
+        input_dim=len(vocab), 
+        output_dim=dim, 
+        mask_zero=True,
+        weights=[embedding_matrix], 
+        input_length=max_length,
+        trainable=False)
+    model.add(embedding)
+    model.add(LSTM(units=50, activation='sigmoid', recurrent_activation='hard_sigmoid'))
+    model.add(Dropout(0.5))
+    model.add(Dense(1))
+    model.add(Activation('sigmoid'))
+    # Compile and train the model
+    LogInfo('Compiling the Model...')
+    model.compile(loss='binary_crossentropy',
+                  optimizer='adam',metrics=['accuracy'])
+
+    LogInfo("Train and predict...")
+    skf = StratifiedKFold(y_train, n_folds=3, shuffle=True)
+    new_train = np.zeros((len(p_train),1))
+    new_test = np.zeros((len(p_test),1))
+    for i,(trainid,valid) in enumerate(skf):
+        print('fold' + str(i))
+        train_x = p_train[trainid]
+        train_y = y_train[trainid]
+        val_x = p_train[valid]
+        model.fit(train_x, train_y,
+              batch_size=batch_size,
+              epochs=n_epoch,verbose=1)
+        new_train[valid] = model.predict_proba(val_x)
+        new_test += model.predict_proba(p_test)
+
+    new_test /= 3
+    stacks = []
+    stacks_name = []
+    stack = np.vstack([new_train,new_test])
+    stacks.append(stack)
+    stacks = np.hstack(stacks)
+    clf_stacks = pd.DataFrame(data=stacks,columns=['lstm'])
+    lstm_train = clf_stacks.iloc[:len(X_train)]
+    lstm_test = clf_stacks.iloc[len(X_train):].reset_index(drop=True)
+    return lstm_train, lstm_test    
 
   
   
